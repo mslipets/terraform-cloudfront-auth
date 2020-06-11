@@ -1,4 +1,4 @@
-variable "cloudfront_auth_brach" {
+variable "cloudfront_auth_branch" {
   type        = string
   default     = "cognito"
   description = "https://github.com/mslipets/cloudfront-auth/{branch_name} (current actual \"cognito\")"
@@ -11,7 +11,7 @@ variable "auth_vendor" {
 
 variable "cloudfront_distribution" {
   type        = string
-  description = "The cloudfront distribtion"
+  description = "The cloudfront distribution"   # URL?
 }
 
 variable "client_id" {
@@ -31,7 +31,7 @@ variable "base_uri" {
 
 variable "redirect_uri" {
   type        = string
-  description = "The redirect uri "
+  description = "The redirect uri" # redirect to what?
 }
 
 variable "hd" {
@@ -50,7 +50,7 @@ variable "authz" {
   type        = string
   default     = "1"
   description = "The authorisation method (google, microsoft only). Mirosoft: (1) Azure AD Login (default)\n   (2) JSON Username Lookup\n\n Google: (1) Hosted Domain - verify email's domain matches that of the given hosted domain\n   (2) HTTP Email Lookup - verify email exists in JSON array located at given HTTP endpoint\n   (3) Google Groups Lookup - verify email exists in one of given Google Groups"
-}
+} # Is this a string containing a number? Numbers 1 and 2 are repeated in the description.
 
 variable "github_organization" {
   type        = string
@@ -94,13 +94,13 @@ variable "cloudfront_default_root_object" {
 
 variable "cloudfront_acm_certificate_arn" {
   description = "ACM Certificate ARN for Cloudfront"
-  default     = ""
+  default     = "" # Perhaps this should be required
 }
 
 variable "nodejs_version" {
   type        = string
   default     = "10.19.0"
-  description = "Node.js runtime version."
+  description = "Node.js runtime version." # For building or for running?
 }
 
 variable "geo_restriction_whitelisted_locations" {
@@ -111,5 +111,5 @@ variable "geo_restriction_whitelisted_locations" {
 
 variable "bucket_access_roles_arn_list" {
   type        = list(string)
-  description = "A Role ARN which granted RW rights to bucket (to be used by instance profiles)"
+  description = "A Role ARN which granted RW rights to bucket (to be used by instance profiles)" # I could not figure this out and [] was an error. Please give an example.
 }
