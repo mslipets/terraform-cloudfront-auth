@@ -4,18 +4,7 @@
 resource "null_resource" "provision_nodejs" {
   provisioner "local-exec" {
     command = <<EOF
-if [ ! $(brew list nvm 2>/dev/null) ]; then
-  brew install nvm &&\
-  cat <<END >> ~/.bash_profile
-export NVM_DIR="$HOME/.nvm"
-  [ -s "`brew --prefix nvm`/nvm.sh" ] && . "`brew --prefix nvm`/nvm.sh"  # This loads nvm
-  [ -s "`brew --prefix nvm`/etc/bash_completion.d/nvm" ] && . "`brew --prefix nvm`/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
-END
-. ~/.bash_profile 2>/dev/null
-else
-. `brew --prefix nvm`/nvm.sh 2>/dev/null
-fi
-    nvm install ${var.nodejs_version} &&\
+    nvm install -s ${var.nodejs_version} &&\
     nvm use ${var.nodejs_version}
 EOF
   }
@@ -40,7 +29,6 @@ if [ ! -d "build" ]; then
     unzip -q cloudfront-auth-${var.cloudfront_auth_brach}.zip -d build/
     mkdir build/cloudfront-auth-${var.cloudfront_auth_brach}/distributions
 
-    . $(brew --prefix nvm)/nvm.sh 2>/dev/null
     nvm use ${var.nodejs_version}
     cp ${data.local_file.build-js.filename} build/cloudfront-auth-${var.cloudfront_auth_brach}/build/build.js&&\
     cd build/cloudfront-auth-${var.cloudfront_auth_brach} && npm i minimist shelljs && npm install && cd build && npm install
@@ -70,7 +58,6 @@ resource "null_resource" "build_lambda" {
 
   provisioner "local-exec" {
     command = <<EOF
-. $(brew --prefix nvm)/nvm.sh 2>/dev/null
 nvm use ${var.nodejs_version}&&\
 cd build/cloudfront-auth-${var.cloudfront_auth_brach} && node build/build.js --AUTH_VENDOR=${var.auth_vendor} --CLOUDFRONT_DISTRIBUTION=${var.cloudfront_distribution} --CLIENT_ID=${var.client_id} --CLIENT_SECRET=${var.client_secret == "" ? "none" : var.client_secret} --BASE_URL=${var.base_uri} --REDIRECT_URI=${var.redirect_uri} --HD=${var.hd} --SESSION_DURATION=${var.session_duration} --AUTHZ=${var.authz} --GITHUB_ORGANIZATION=${var.github_organization}
 EOF
