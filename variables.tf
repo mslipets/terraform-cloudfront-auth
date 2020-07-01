@@ -50,12 +50,12 @@ variable "authz" {
   type        = string
   default     = "1"
   description = <<-DOC
-    A string containing an integer specifying the Google and Microsoft Azure authorization
-    method. This has no effect on other cloud vendors.
-    Microsoft:
+    A string containing an integer specifying the authorization method for auth_vendor google
+    and microsoft. This has no effect on other auth_vendors.
+    microsoft:
       "1" Azure AD Login (default)
       "2" JSON Username Lookup
-    Google:
+    google:
       "1" Hosted Domain - verify email's domain matches that of the given hosted domain
       "2" HTTP Email Lookup - verify email exists in JSON array located at given HTTP endpoint
       "3" Google Groups Lookup - verify email exists in one of given Google Groups"
