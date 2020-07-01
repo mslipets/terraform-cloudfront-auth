@@ -1,4 +1,4 @@
-variable "cloudfront_auth_brach" {
+variable "cloudfront_auth_branch" {
   type        = string
   default     = "cognito"
   description = "https://github.com/mslipets/cloudfront-auth/{branch_name} (current actual \"cognito\")"
@@ -94,7 +94,6 @@ variable "cloudfront_default_root_object" {
 
 variable "cloudfront_acm_certificate_arn" {
   description = "ACM Certificate ARN for Cloudfront"
-  default     = ""
 }
 
 variable "nodejs_version" {
@@ -111,5 +110,5 @@ variable "geo_restriction_whitelisted_locations" {
 
 variable "bucket_access_roles_arn_list" {
   type        = list(string)
-  description = "A Role ARN which granted RW rights to bucket (to be used by instance profiles)"
+  description = "A Role ARN which granted RW rights to bucket (to be used by instance profiles in order to upload/cleanup bucket content)"
 }

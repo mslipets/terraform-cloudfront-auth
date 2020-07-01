@@ -10,7 +10,7 @@ module "cloudfront_auth" {
 
   bucket_name                    = "private.example.com"
   region                         = "eu-west-1"
-  cloudfront_acm_certificate_arn = "${aws_acm_certificate.cert.arn}"
+  cloudfront_acm_certificate_arn = aws_acm_certificate.cert.arn
 }
 
 resource "aws_acm_certificate" "cert" {
@@ -24,9 +24,9 @@ resource "aws_acm_certificate" "cert" {
 
 // A test object for the bucket.
 resource "aws_s3_bucket_object" "test_object" {
-  bucket       = "${module.cloudfront_auth.s3_bucket}"
+  bucket       = module.cloudfront_auth.s3_bucket
   key          = "index.html"
   source       = "${path.module}/index.html"
   content_type = "text/html"
-  etag         = "${md5(file("${path.module}/index.html"))}"
+  etag         = sha256(file("${path.module}/index.html"))
 }

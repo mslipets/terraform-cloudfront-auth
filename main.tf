@@ -1,7 +1,22 @@
 #
+# Local nvm presence check
+#
+resource "null_resource" "check_nvm" {
+  provisioner "local-exec" {
+    command = <<EOF
+    if not which nvm; then
+        echo "ERROR: nvm is not installed"
+        exit 1
+    fi
+EOF
+  }
+}
+
+#
 # Local nodejs dependency install.
 #
 resource "null_resource" "provision_nodejs" {
+  depends_on = [null_resource.check_nvm]
   provisioner "local-exec" {
     command = <<EOF
     nvm install -s ${var.nodejs_version} &&\
@@ -18,20 +33,21 @@ resource "null_resource" "copy_source" {
 
   triggers = {
     build_resource = null_resource.provision_nodejs.id
-    always_run     = "${timestamp()}"
+    always_run     = timestamp()
   }
 
   provisioner "local-exec" {
     command = <<EOF
 if [ ! -d "build" ]; then
   if [ ! -L "build" ]; then
-    curl -L https://github.com/mslipets/cloudfront-auth/archive/${var.cloudfront_auth_brach}.zip --output cloudfront-auth-${var.cloudfront_auth_brach}.zip
-    unzip -q cloudfront-auth-${var.cloudfront_auth_brach}.zip -d build/
-    mkdir build/cloudfront-auth-${var.cloudfront_auth_brach}/distributions
+    curl -L https://github.com/mslipets/cloudfront-auth/archive/${var.cloudfront_auth_branch}.zip \
+        --output cloudfront-auth-${var.cloudfront_auth_branch}.zip
+    unzip -q cloudfront-auth-${var.cloudfront_auth_branch}.zip -d build/
+    mkdir build/cloudfront-auth-${var.cloudfront_auth_branch}/distributions
 
     nvm use ${var.nodejs_version}
-    cp ${data.local_file.build-js.filename} build/cloudfront-auth-${var.cloudfront_auth_brach}/build/build.js&&\
-    cd build/cloudfront-auth-${var.cloudfront_auth_brach} && npm i minimist shelljs && npm install && cd build && npm install
+    cp ${data.local_file.build-js.filename} build/cloudfront-auth-${var.cloudfront_auth_branch}/build/build.js&&\
+    cd build/cloudfront-auth-${var.cloudfront_auth_branch} && npm i minimist shelljs && npm install && cd build && npm install
   fi
 fi
 EOF
@@ -58,8 +74,16 @@ resource "null_resource" "build_lambda" {
 
   provisioner "local-exec" {
     command = <<EOF
-nvm use ${var.nodejs_version}&&\
-cd build/cloudfront-auth-${var.cloudfront_auth_brach} && node build/build.js --AUTH_VENDOR=${var.auth_vendor} --CLOUDFRONT_DISTRIBUTION=${var.cloudfront_distribution} --CLIENT_ID=${var.client_id} --CLIENT_SECRET=${var.client_secret == "" ? "none" : var.client_secret} --BASE_URL=${var.base_uri} --REDIRECT_URI=${var.redirect_uri} --HD=${var.hd} --SESSION_DURATION=${var.session_duration} --AUTHZ=${var.authz} --GITHUB_ORGANIZATION=${var.github_organization}
+    nvm use ${var.nodejs_version}&&\
+    cd build/cloudfront-auth-${var.cloudfront_auth_branch} &&\
+    node build/build.js --AUTH_VENDOR=${var.auth_vendor} \
+    --BASE_URL=${var.base_uri} \
+    --CLOUDFRONT_DISTRIBUTION=${var.cloudfront_distribution} \
+    --CLIENT_ID=${var.client_id} \
+    --CLIENT_SECRET=${var.client_secret == "" ? "none" : var.client_secret} \
+    --REDIRECT_URI=${var.redirect_uri} --HD=${var.hd} \
+    --SESSION_DURATION=${var.session_duration} --AUTHZ=${var.authz} \
+    --GITHUB_ORGANIZATION=${var.github_organization}
 EOF
   }
 }
@@ -72,7 +96,7 @@ resource "null_resource" "copy_lambda_artifact" {
   }
 
   provisioner "local-exec" {
-    command = "cp build/cloudfront-auth-${var.cloudfront_auth_brach}/distributions/${var.cloudfront_distribution}/${var.cloudfront_distribution}.zip ${local.lambda_filename}"
+    command = "cp build/cloudfront-auth-${var.cloudfront_auth_branch}/distributions/${var.cloudfront_distribution}/${var.cloudfront_distribution}.zip ${local.lambda_filename}"
   }
 }
 
@@ -101,67 +125,44 @@ resource "aws_s3_bucket" "default" {
 data "aws_iam_policy_document" "s3_bucket_policy" {
   statement {
     actions = [
-      "s3:GetObject"
-    ]
-
-    resources = [
-      "${aws_s3_bucket.default.arn}/*",
-    ]
-
-    principals {
-      type = "AWS"
-      identifiers = [
-        aws_cloudfront_origin_access_identity.default.iam_arn,
-      ]
-    }
-  }
-
-  statement {
-    actions = [
-      "s3:ListBucket",
-    ]
-
-    resources = [
-      aws_s3_bucket.default.arn,
-    ]
-
-    principals {
-      type = "AWS"
-      identifiers = [
-        aws_cloudfront_origin_access_identity.default.iam_arn,
-      ]
-    }
-  }
-
-  statement {
-    actions = [
-      "s3:GetBucketLocation",
+      "s3:GetObject",
       "s3:ListBucket"
     ]
 
     resources = [
       aws_s3_bucket.default.arn,
+      "${aws_s3_bucket.default.arn}/*"
     ]
 
     principals {
-      type        = "AWS"
-      identifiers = var.bucket_access_roles_arn_list
+      type = "AWS"
+      identifiers = [
+        aws_cloudfront_origin_access_identity.default.iam_arn,
+      ]
     }
   }
 
-  statement {
-    actions = [
-      "s3:GetObject",
-      "s3:PutObject"
-    ]
+  dynamic "statement" {
+    for_each = var.bucket_access_roles_arn_list
+    iterator = arn
+    content {
 
-    resources = [
-      "${aws_s3_bucket.default.arn}/*",
-    ]
+      actions = [
+        "s3:GetBucketLocation",
+        "s3:ListBucket",
+        "s3:GetObject",
+        "s3:PutObject"
+      ]
 
-    principals {
-      type        = "AWS"
-      identifiers = var.bucket_access_roles_arn_list
+      resources = [
+        aws_s3_bucket.default.arn,
+        "${aws_s3_bucket.default.arn}/*"
+      ]
+
+      principals {
+        type        = "AWS"
+        identifiers = [arn.value]
+      }
     }
   }
 }
@@ -268,7 +269,7 @@ data "aws_iam_policy_document" "lambda_log_access" {
 
 # This function is created in us-east-1 as required by CloudFront.
 resource "aws_lambda_function" "default" {
-  depends_on = [null_resource.copy_lambda_artifact]
+  depends_on = [null_resource.check_nvm, null_resource.copy_lambda_artifact]
 
   provider         = aws.us-east-1
   description      = "Managed by Terraform"
