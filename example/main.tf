@@ -5,6 +5,7 @@ module "cloudfront_auth" {
   cloudfront_distribution = "private.example.com"
   client_id               = "CHANGE_ME"
   client_secret           = "CHANGE_ME"
+  base_uri                = "https://auth-xxxxxx.auth.us-east-1.amazoncognito.com"
   redirect_uri            = "https://private.example.com/callback"
   github_organization     = "exampleorg"
 
@@ -14,7 +15,7 @@ module "cloudfront_auth" {
 }
 
 resource "aws_acm_certificate" "cert" {
-  provider          = "aws.us-east-1"
+  provider          = aws.us-east-1
   domain_name       = "example.com"
   validation_method = "EMAIL"
   subject_alternative_names = [

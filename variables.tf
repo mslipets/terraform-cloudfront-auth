@@ -120,5 +120,6 @@ variable "geo_restriction_whitelisted_locations" {
 
 variable "bucket_access_roles_arn_list" {
   type        = list(string)
+  default     = []
   description = "A Role ARN which granted RW rights to bucket (to be used by instance profiles in order to upload/cleanup bucket content)"
 }
