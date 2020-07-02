@@ -49,7 +49,17 @@ variable "session_duration" {
 variable "authz" {
   type        = string
   default     = "1"
-  description = "The authorisation method (google, microsoft only). Mirosoft: (1) Azure AD Login (default)\n   (2) JSON Username Lookup\n\n Google: (1) Hosted Domain - verify email's domain matches that of the given hosted domain\n   (2) HTTP Email Lookup - verify email exists in JSON array located at given HTTP endpoint\n   (3) Google Groups Lookup - verify email exists in one of given Google Groups"
+  description = <<-DOC
+    A string containing an integer specifying the authorization method for auth_vendor google
+    and microsoft. This has no effect on other auth_vendors.
+    microsoft:
+      "1" Azure AD Login (default)
+      "2" JSON Username Lookup
+    google:
+      "1" Hosted Domain - verify email's domain matches that of the given hosted domain
+      "2" HTTP Email Lookup - verify email exists in JSON array located at given HTTP endpoint
+      "3" Google Groups Lookup - verify email exists in one of given Google Groups"
+    DOC
 }
 
 variable "github_organization" {
